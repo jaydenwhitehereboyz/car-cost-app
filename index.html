@@ -80,72 +80,12 @@
         </label>
       </div>
 
-      <div class="car-stage" aria-label="Схематичное изображение автомобиля">
-        <div class="car-glow"></div>
-
-        <svg class="car" viewBox="0 0 640 300" role="img" aria-label="Автомобиль">
-          <defs>
-            <linearGradient id="bodyGradient" x1="0" x2="1">
-              <stop offset="0%" stop-color="#48546b"/>
-              <stop offset="50%" stop-color="#7f8ba2"/>
-              <stop offset="100%" stop-color="#3a455b"/>
-            </linearGradient>
-            <linearGradient id="glassGradient" x1="0" x2="1">
-              <stop offset="0%" stop-color="#142031"/>
-              <stop offset="100%" stop-color="#263a52"/>
-            </linearGradient>
-          </defs>
-
-          <ellipse cx="320" cy="246" rx="244" ry="26" fill="rgba(0,0,0,0.34)"/>
-
-          <path
-            d="M101 193
-               C127 150, 177 126, 240 119
-               L287 65
-               C299 51, 318 43, 340 43
-               L430 43
-               C454 43, 473 53, 489 70
-               L530 118
-               C570 126, 596 145, 609 177
-               L615 194
-               C620 209, 608 222, 592 222
-               L91 222
-               C73 222, 63 207, 72 192
-               C79 181, 89 181, 101 193Z"
-            fill="url(#bodyGradient)"
-            stroke="#9ca8bb"
-            stroke-width="3"
-          />
-
-          <path
-            d="M268 116
-               L305 73
-               C313 64, 326 59, 341 59
-               L421 59
-               C436 59, 450 65, 460 76
-               L496 116Z"
-            fill="url(#glassGradient)"
-            stroke="#53677f"
-            stroke-width="3"
-          />
-
-          <path d="M378 60 L378 116" stroke="#66768a" stroke-width="3"/>
-          <path d="M125 168 H195" stroke="#b7c1d0" stroke-width="5" stroke-linecap="round"/>
-          <path d="M535 167 H591" stroke="#f7dd77" stroke-width="8" stroke-linecap="round"/>
-          <path d="M86 188 H128" stroke="#ff6b6b" stroke-width="7" stroke-linecap="round"/>
-
-          <circle cx="192" cy="222" r="48" fill="#10151d"/>
-          <circle cx="192" cy="222" r="25" fill="#566176"/>
-          <circle cx="192" cy="222" r="9" fill="#bac2cf"/>
-
-          <circle cx="502" cy="222" r="48" fill="#10151d"/>
-          <circle cx="502" cy="222" r="25" fill="#566176"/>
-          <circle cx="502" cy="222" r="9" fill="#bac2cf"/>
-        </svg>
+      <div class="car-stage" aria-label="3D-модель автомобиля">
+        <div id="car3d" class="car3d-view"></div>
 
         <div class="car-label">
           <span>Ваш автомобиль</span>
-          <small>Все расходы суммируются автоматически</small>
+          <small>Потяните мышкой, чтобы повернуть</small>
         </div>
       </div>
 
@@ -201,6 +141,6 @@
     </section>
   </main>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
