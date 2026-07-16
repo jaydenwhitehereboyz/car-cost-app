@@ -40,3 +40,5 @@ jobs:
           fi
           git commit -m "Add detailed Aurora GT GLB model"
           git push
+
+# Triggered after the workflow was installed.
