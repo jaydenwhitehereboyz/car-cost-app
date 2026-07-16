@@ -1,121 +1,37 @@
 import * as THREE from "https://esm.sh/three@0.166.1";
 import { OrbitControls } from "https://esm.sh/three@0.166.1/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "https://esm.sh/three@0.166.1/examples/jsm/loaders/GLTFLoader.js";
 
-const $ = (s) => document.querySelector(s);
-const money = new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 });
-const positive = (id) => { const v = Number(typeof id === "string" ? $(`#${id}`)?.value : id?.value); return Number.isFinite(v) && v > 0 ? v : 0; };
-const monthly = (input) => input.dataset.period === "year" ? positive(input) / 12 : positive(input);
+const $=s=>document.querySelector(s), money=new Intl.NumberFormat("ru-RU",{style:"currency",currency:"RUB",maximumFractionDigits:0});
+const positive=id=>{const v=Number(typeof id==="string"?$(`#${id}`)?.value:id?.value);return Number.isFinite(v)&&v>0?v:0}, monthly=i=>i.dataset.period==="year"?positive(i)/12:positive(i);
+const direct=c=>[...document.querySelectorAll(`[data-expense][data-category="${c}"]`)].reduce((s,i)=>s+monthly(i),0);
+function depreciation(){const p=positive("purchasePrice");if($("#depreciationMode").value==="resale"){const y=positive("resaleYears");return y?Math.max(p-positive("resalePrice"),0)/(y*12):0}return p*positive("depreciationRate")/1200}
+function calculateTotals(){const y=positive("initialCostsYears"),t={purchase:y?positive("initialCosts")/(y*12):0,fuel:positive("monthlyMileage")*positive("energyConsumption")/100*positive("energyPrice")+positive("fuelExtras"),insurance:direct("insurance"),maintenance:direct("maintenance"),depreciation:depreciation(),parking:direct("parking"),taxes:direct("taxes"),other:direct("other")};Object.entries(t).forEach(([k,v])=>{const e=$(`[data-category-total="${k}"]`);if(e)e.textContent=`${money.format(v)}/мес`});const total=Object.values(t).reduce((a,b)=>a+b,0);$("#monthlyDepreciation").textContent=money.format(t.depreciation);$("#monthlyTotal").textContent=money.format(total);$("#weeklyTotal").textContent=money.format(total*12/52);$("#yearlyTotal").textContent=money.format(total*12)}
+function updateEnergy(){const e=$("#energyType").value==="electric";$("#consumptionUnit").textContent=e?"кВт⋅ч/100 км":"л/100 км";$("#energyPriceUnit").textContent=e?"₽/кВт⋅ч":"₽/л"}
+function updateDepMode(){const r=$("#depreciationMode").value==="resale";$("#depreciationPercentFields").hidden=r;$("#depreciationResaleFields").hidden=!r}
 
-function direct(category) {
-  return [...document.querySelectorAll(`[data-expense][data-category="${category}"]`)].reduce((sum, input) => sum + monthly(input), 0);
-}
-
-function depreciation() {
-  const price = positive("purchasePrice");
-  if ($("#depreciationMode").value === "resale") {
-    const years = positive("resaleYears");
-    return years ? Math.max(price - positive("resalePrice"), 0) / (years * 12) : 0;
-  }
-  return price * positive("depreciationRate") / 1200;
-}
-
-function calculateTotals() {
-  const years = positive("initialCostsYears");
-  const totals = {
-    purchase: years ? positive("initialCosts") / (years * 12) : 0,
-    fuel: positive("monthlyMileage") * positive("energyConsumption") / 100 * positive("energyPrice") + positive("fuelExtras"),
-    insurance: direct("insurance"), maintenance: direct("maintenance"), depreciation: depreciation(),
-    parking: direct("parking"), taxes: direct("taxes"), other: direct("other")
-  };
-  Object.entries(totals).forEach(([key, value]) => { const el = $(`[data-category-total="${key}"]`); if (el) el.textContent = `${money.format(value)}/мес`; });
-  const total = Object.values(totals).reduce((a, b) => a + b, 0);
-  $("#monthlyDepreciation").textContent = money.format(totals.depreciation);
-  $("#monthlyTotal").textContent = money.format(total);
-  $("#weeklyTotal").textContent = money.format(total * 12 / 52);
-  $("#yearlyTotal").textContent = money.format(total * 12);
-}
-
-function updateEnergy() {
-  const electric = $("#energyType").value === "electric";
-  $("#consumptionUnit").textContent = electric ? "кВт⋅ч/100 км" : "л/100 км";
-  $("#energyPriceUnit").textContent = electric ? "₽/кВт⋅ч" : "₽/л";
-}
-
-function updateDepMode() {
-  const resale = $("#depreciationMode").value === "resale";
-  $("#depreciationPercentFields").hidden = resale;
-  $("#depreciationResaleFields").hidden = !resale;
-}
-
-const CARS = {
-  Toyota: [["Camry","sedan",5.10,2.28,1.03,2.45,.96,-.10,3.42,.57],["RAV4","suv",4.75,2.35,1.28,2.55,1.08,-.15,3.18,.62]],
-  BMW: [["3 Series","sedan",4.92,2.24,.98,2.32,.90,-.20,3.30,.58],["X5","suv",5.00,2.42,1.34,2.65,1.12,-.14,3.35,.66]],
-  Mercedes: [["C-Class","sedan",4.85,2.20,1.00,2.30,.92,-.16,3.24,.57],["GLC","suv",4.78,2.34,1.27,2.50,1.06,-.12,3.15,.63]],
-  Tesla: [["Model 3","fastback",4.76,2.22,.93,2.48,.88,-.08,3.16,.57],["Model Y","crossover",4.78,2.30,1.20,2.62,1.02,-.08,3.18,.62]],
-  Volkswagen: [["Golf","hatchback",4.35,2.16,1.02,2.48,.96,-.20,2.88,.54],["Tiguan","suv",4.62,2.28,1.24,2.48,1.05,-.12,3.02,.61]],
-  Kia: [["K5","fastback",5.00,2.27,.96,2.48,.90,-.13,3.36,.57],["Sportage","suv",4.66,2.31,1.25,2.48,1.05,-.10,3.06,.62]],
-  Hyundai: [["Solaris","sedan",4.40,2.12,1.00,2.18,.93,-.12,2.92,.53],["Tucson","suv",4.63,2.30,1.25,2.48,1.05,-.10,3.05,.62]],
-  Lada: [["Vesta","sedan",4.45,2.14,1.01,2.22,.94,-.12,2.96,.54],["Niva Travel","suv",4.20,2.12,1.28,2.18,1.07,-.16,2.70,.61]]
+const CARS={
+  "GLB Demo":[["Concept Car","glb","./models/demo-car.glb"]],
+  Toyota:[["Camry","sedan",5.10,2.28,1.03,2.45,.96,-.10,3.42,.57],["RAV4","suv",4.75,2.35,1.28,2.55,1.08,-.15,3.18,.62]],
+  BMW:[["3 Series","sedan",4.92,2.24,.98,2.32,.90,-.20,3.30,.58],["X5","suv",5.00,2.42,1.34,2.65,1.12,-.14,3.35,.66]],
+  Mercedes:[["C-Class","sedan",4.85,2.20,1.00,2.30,.92,-.16,3.24,.57],["GLC","suv",4.78,2.34,1.27,2.50,1.06,-.12,3.15,.63]],
+  Tesla:[["Model 3","fastback",4.76,2.22,.93,2.48,.88,-.08,3.16,.57],["Model Y","crossover",4.78,2.30,1.20,2.62,1.02,-.08,3.18,.62]],
+  Volkswagen:[["Golf","hatchback",4.35,2.16,1.02,2.48,.96,-.20,2.88,.54],["Tiguan","suv",4.62,2.28,1.24,2.48,1.05,-.12,3.02,.61]],
+  Kia:[["K5","fastback",5.00,2.27,.96,2.48,.90,-.13,3.36,.57],["Sportage","suv",4.66,2.31,1.25,2.48,1.05,-.10,3.06,.62]],
+  Hyundai:[["Solaris","sedan",4.40,2.12,1.00,2.18,.93,-.12,2.92,.53],["Tucson","suv",4.63,2.30,1.25,2.48,1.05,-.10,3.05,.62]],
+  Lada:[["Vesta","sedan",4.45,2.14,1.01,2.22,.94,-.12,2.96,.54],["Niva Travel","suv",4.20,2.12,1.28,2.18,1.07,-.16,2.70,.61]]
 };
 
-function injectCustomizer() {
-  const stage = $(".car-stage");
-  stage.insertAdjacentHTML("afterbegin", `<div class="car-customizer"><label><span>Марка</span><select id="carBrand"></select></label><label><span>Модель</span><select id="carModel"></select></label><label class="car-color-field"><span>Цвет</span><span class="car-color-control"><input id="carColor" type="color" value="#79869d"><output id="carColorCode">#79869D</output></span></label></div>`);
-  const label = $(".car-label");
-  label.innerHTML = `<span id="selectedCarName">Toyota Camry</span><small>Потяните мышкой, приблизьте шильдики колесом</small>`;
-  const style = document.createElement("style");
-  style.textContent = `.car-customizer{position:absolute;top:18px;left:18px;right:18px;z-index:4;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:16px;background:rgba(11,15,22,.84);box-shadow:0 14px 32px rgba(0,0,0,.24);backdrop-filter:blur(14px)}.car-customizer label{display:grid;gap:6px;min-width:0}.car-customizer label>span:first-child{color:#7f899d;font-size:.68rem;font-weight:750}.car-customizer select,.car-color-control{width:100%;min-width:0;height:38px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:#111722;color:#f5f7fb;font-size:.78rem;font-weight:750}.car-customizer select{padding:0 9px;outline:0;cursor:pointer}.car-customizer select option{background:#151a24}.car-color-control{display:flex;align-items:center;gap:8px;padding:4px 8px 4px 5px}.car-color-control input{width:32px;height:28px;padding:0;border:0;background:transparent;cursor:pointer}.car-color-control output{color:#cbd5e6;font-size:.72rem;font-weight:800}@media(max-width:720px){.car-customizer{grid-template-columns:1fr 1fr}.car-color-field{grid-column:1/-1}.car-stage,.car3d-view{min-height:430px!important}}`;
-  document.head.appendChild(style);
-}
+function injectCustomizer(){const stage=$(".car-stage");stage.insertAdjacentHTML("afterbegin",`<div class="car-customizer"><label><span>Марка</span><select id="carBrand"></select></label><label><span>Модель</span><select id="carModel"></select></label><label class="car-color-field"><span>Цвет</span><span class="car-color-control"><input id="carColor" type="color" value="#4778be"><output id="carColorCode">#4778BE</output></span></label></div><div id="modelStatus" class="model-status">Загрузка GLB…</div>`);$(".car-label").innerHTML=`<span id="selectedCarName">GLB Demo Concept Car</span><small id="selectedCarHint">Настоящий GLB-файл · потяните мышкой для вращения</small>`;const style=document.createElement("style");style.textContent=`.car-customizer{position:absolute;top:18px;left:18px;right:18px;z-index:4;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:16px;background:rgba(11,15,22,.84);box-shadow:0 14px 32px rgba(0,0,0,.24);backdrop-filter:blur(14px)}.car-customizer label{display:grid;gap:6px;min-width:0}.car-customizer label>span:first-child{color:#7f899d;font-size:.68rem;font-weight:750}.car-customizer select,.car-color-control{width:100%;min-width:0;height:38px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:#111722;color:#f5f7fb;font-size:.78rem;font-weight:750}.car-customizer select{padding:0 9px;outline:0;cursor:pointer}.car-customizer select option{background:#151a24}.car-color-control{display:flex;align-items:center;gap:8px;padding:4px 8px 4px 5px}.car-color-control input{width:32px;height:28px;padding:0;border:0;background:transparent;cursor:pointer}.car-color-control output{color:#cbd5e6;font-size:.72rem;font-weight:800}.model-status{position:absolute;top:102px;left:50%;z-index:4;transform:translateX(-50%);padding:7px 11px;border-radius:999px;background:rgba(10,14,20,.72);color:#9eabc0;font-size:.7rem;font-weight:750;pointer-events:none;transition:opacity .2s}.model-status.is-ready{opacity:0}.model-status.is-error{color:#f0b7b7}@media(max-width:720px){.car-customizer{grid-template-columns:1fr 1fr}.car-color-field{grid-column:1/-1}.model-status{top:150px}.car-stage,.car3d-view{min-height:430px!important}}`;document.head.appendChild(style)}
+function badge(text,width,pos,rotation){const c=document.createElement("canvas");c.width=512;c.height=128;const x=c.getContext("2d");x.font="700 58px Arial";x.textAlign="center";x.textBaseline="middle";x.lineWidth=8;x.strokeStyle="rgba(5,8,13,.95)";x.strokeText(text,256,64);x.fillStyle="#e8edf6";x.fillText(text,256,64);const texture=new THREE.CanvasTexture(c);texture.colorSpace=THREE.SRGBColorSpace;const m=new THREE.Mesh(new THREE.PlaneGeometry(width,.17),new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,side:THREE.DoubleSide}));m.position.copy(pos);m.rotation.y=rotation;return m}
+function dispose(o){o?.traverse(c=>{c.geometry?.dispose();(Array.isArray(c.material)?c.material:[c.material]).filter(Boolean).forEach(m=>{m.map?.dispose();m.dispose()})})}
 
-function badge(text, width, pos, rotation) {
-  const canvas = document.createElement("canvas"); canvas.width = 512; canvas.height = 128;
-  const ctx = canvas.getContext("2d"); ctx.font = "700 58px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.lineWidth = 8; ctx.strokeStyle = "rgba(5,8,13,.95)"; ctx.strokeText(text,256,64); ctx.fillStyle = "#e8edf6"; ctx.fillText(text,256,64);
-  const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width,.17), new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,side:THREE.DoubleSide}));
-  mesh.position.copy(pos); mesh.rotation.y = rotation; return mesh;
-}
+function createScene(){const host=$("#car3d"),scene=new THREE.Scene();scene.fog=new THREE.Fog(0x0e1219,12,22);const camera=new THREE.PerspectiveCamera(40,1,.1,100);camera.position.set(7.2,4.1,8.4);const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;host.appendChild(renderer.domElement);const controls=new OrbitControls(camera,renderer.domElement);Object.assign(controls,{enableDamping:true,enablePan:false,enableZoom:true,autoRotate:true,autoRotateSpeed:1.25,minDistance:5.2,maxDistance:14,minPolarAngle:Math.PI/3.5,maxPolarAngle:Math.PI/2.05});controls.target.set(0,.8,0);scene.add(new THREE.HemisphereLight(0xdce8ff,0x171b24,2.5));const key=new THREE.DirectionalLight(0xffffff,3.2);key.position.set(6,9,7);scene.add(key);const rim=new THREE.DirectionalLight(0x789dff,2.1);rim.position.set(-7,4,-6);scene.add(rim);const floor=new THREE.Mesh(new THREE.CircleGeometry(7.5,64),new THREE.MeshStandardMaterial({color:0x141922,roughness:.92,metalness:.08}));floor.rotation.x=-Math.PI/2;floor.position.y=-.56;scene.add(floor);const shadow=new THREE.Mesh(new THREE.CircleGeometry(3.25,64),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.28,depthWrite:false}));shadow.rotation.x=-Math.PI/2;shadow.position.y=-.54;scene.add(shadow);const loader=new GLTFLoader();let current=null,currentKey="",token=0;
+  const status=(text,state="")=>{const e=$("#modelStatus");e.textContent=text;e.className=`model-status ${state}`.trim()},clear=()=>{if(current){scene.remove(current);dispose(current);current=null;currentKey=""}},paint=(object,color)=>object.traverse(c=>{if(!c.isMesh||!c.material)return;const mats=(Array.isArray(c.material)?c.material:[c.material]).map(m=>{const n=m.clone();n.vertexColors=false;n.color?.set(color);n.metalness=.55;n.roughness=.32;return n});c.material=Array.isArray(c.material)?mats:mats[0]}),fit=o=>{o.updateMatrixWorld(true);let b=new THREE.Box3().setFromObject(o),s=b.getSize(new THREE.Vector3()),center=b.getCenter(new THREE.Vector3());o.position.sub(center);o.scale.setScalar(5.1/(Math.max(s.x,s.y,s.z)||1));o.updateMatrixWorld(true);b=new THREE.Box3().setFromObject(o);o.position.y+=-.5-b.min.y};
+  function procedural(data,brand,color){clear();const [name,type,L,W,B,CL,CH,CO,WB,WR]=data,car=new THREE.Group();car.rotation.y=-.55;scene.add(car);current=car;currentKey=`proc:${brand}:${name}`;const body=new THREE.MeshStandardMaterial({color,metalness:.72,roughness:.25}),trim=new THREE.MeshStandardMaterial({color:0x161c27,metalness:.32,roughness:.55}),glass=new THREE.MeshStandardMaterial({color:0x273b55,metalness:.18,roughness:.16}),tire=new THREE.MeshStandardMaterial({color:0x0c1017,roughness:.9}),rimMat=new THREE.MeshStandardMaterial({color:0xa8b3c5,metalness:.8,roughness:.25}),front=new THREE.MeshStandardMaterial({color:0xffe3a0,emissive:0xffc958,emissiveIntensity:1.1}),rear=new THREE.MeshStandardMaterial({color:0xff5e59,emissive:0xff3b36,emissiveIntensity:.9}),y=(type==="suv"||type==="crossover")?.6:.48,add=(g,m,p)=>{const x=new THREE.Mesh(g,m);x.position.set(...p);car.add(x);return x};add(new THREE.BoxGeometry(L,B,W),body,[0,y,0]);const HL=type==="hatchback"?L*.24:L*.29,TL=["hatchback","suv","crossover"].includes(type)?L*.15:L*.21;const hood=add(new THREE.BoxGeometry(HL,.32,W*.91),body,[L/2-HL/2-.08,y+B/2+.15,0]);hood.rotation.z=-.045;const trunk=add(new THREE.BoxGeometry(TL,.29,W*.9),body,[-L/2+TL/2+.08,y+B/2+.13,0]);trunk.rotation.z=.035;add(new THREE.BoxGeometry(CL,CH,W*.79),glass,[CO,y+B/2+CH/2+.08,0]);add(new THREE.BoxGeometry(CL*.72,.17,W*.78),body,[CO-.08,y+B/2+CH+.16,0]);add(new THREE.BoxGeometry(.27,.45,W*.96),trim,[L/2+.13,.21,0]);add(new THREE.BoxGeometry(.27,.45,W*.96),trim,[-L/2-.13,.21,0]);add(new THREE.BoxGeometry(L*.9,.17,W*1.02),trim,[0,-.02,0]);const wg=new THREE.CylinderGeometry(WR,WR,.48,32),rg=new THREE.CylinderGeometry(WR*.51,WR*.51,.5,24),wx=WB/2,wz=W/2+.04;[[wx,-.02,wz],[wx,-.02,-wz],[-wx,-.02,wz],[-wx,-.02,-wz]].forEach(p=>{const w=add(wg,tire,p);w.rotation.x=Math.PI/2;const r=add(rg,rimMat,p);r.rotation.x=Math.PI/2});const fw=W*.21;add(new THREE.BoxGeometry(.13,.24,fw),front,[L/2+.05,y+.12,W*.29]);add(new THREE.BoxGeometry(.13,.24,fw),front,[L/2+.05,y+.12,-W*.29]);add(new THREE.BoxGeometry(.13,.23,fw),rear,[-L/2-.05,y+.12,W*.3]);add(new THREE.BoxGeometry(.13,.23,fw),rear,[-L/2-.05,y+.12,-W*.3]);add(new THREE.BoxGeometry(.14,type==="suv"?.46:.32,W*.37),trim,[L/2+.08,y-.12,0]);car.add(badge(brand.toUpperCase(),.78,new THREE.Vector3(L/2+.155,y+.05,0),Math.PI/2));car.add(badge(name.toUpperCase(),.86,new THREE.Vector3(-L/2-.155,y+.08,0),-Math.PI/2));shadow.scale.set(L/4,W/3,1);status("Процедурная модель","is-ready")}
+  function glb(data,color){const key=`glb:${data[2]}`;if(current&&currentKey===key){paint(current,color);return}const request=++token;status("Загрузка GLB…");loader.load(data[2],g=>{if(request!==token){dispose(g.scene);return}clear();const car=g.scene;paint(car,color);fit(car);car.rotation.y=-.55;car.add(badge("GLB",.6,new THREE.Vector3(2.28,.5,0),Math.PI/2));car.add(badge("CONCEPT",.92,new THREE.Vector3(-2.28,.52,0),-Math.PI/2));scene.add(car);current=car;currentKey=key;shadow.scale.set(1.3,.72,1);status("GLB загружен","is-ready")},undefined,e=>{console.error(e);status("GLB не загрузился — показан fallback","is-error");procedural(["Fallback","fastback",4.8,2.25,1,2.4,.9,-.1,3.2,.57],"GLB",color)})}
+  const build=(data,brand,color)=>{token++;data[1]==="glb"?glb(data,color):procedural(data,brand,color)},resize=()=>{if(!host.clientWidth||!host.clientHeight)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight,false)};new ResizeObserver(resize).observe(host);resize();renderer.setAnimationLoop(()=>{controls.update();renderer.render(scene,camera)});return{build}}
 
-function createScene() {
-  const host = $("#car3d"), scene = new THREE.Scene(); scene.fog = new THREE.Fog(0x0e1219,12,22);
-  const camera = new THREE.PerspectiveCamera(40,1,.1,100); camera.position.set(7.2,4.1,8.4);
-  const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.outputColorSpace=THREE.SRGBColorSpace; host.appendChild(renderer.domElement);
-  const controls = new OrbitControls(camera,renderer.domElement); Object.assign(controls,{enableDamping:true,enablePan:false,enableZoom:true,autoRotate:true,autoRotateSpeed:1.25,minDistance:5.2,maxDistance:14,minPolarAngle:Math.PI/3.5,maxPolarAngle:Math.PI/2.05}); controls.target.set(0,.8,0);
-  scene.add(new THREE.HemisphereLight(0xdce8ff,0x171b24,2.5)); const key=new THREE.DirectionalLight(0xffffff,3.2); key.position.set(6,9,7); scene.add(key); const rim=new THREE.DirectionalLight(0x789dff,2.1); rim.position.set(-7,4,-6); scene.add(rim);
-  const floor=new THREE.Mesh(new THREE.CircleGeometry(7.5,64),new THREE.MeshStandardMaterial({color:0x141922,roughness:.92,metalness:.08})); floor.rotation.x=-Math.PI/2; floor.position.y=-.56; scene.add(floor);
-  const shadow=new THREE.Mesh(new THREE.CircleGeometry(3.25,64),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.28,depthWrite:false})); shadow.rotation.x=-Math.PI/2; shadow.position.y=-.54; scene.add(shadow);
-  let current;
+function initCustomizer(scene){const brand=$("#carBrand"),model=$("#carModel"),color=$("#carColor"),code=$("#carColorCode"),name=$("#selectedCarName"),hint=$("#selectedCarHint");Object.keys(CARS).forEach(b=>brand.add(new Option(b,b)));const models=()=>{model.innerHTML="";CARS[brand.value].forEach((m,i)=>model.add(new Option(m[0],i)))},render=()=>{const data=CARS[brand.value][Number(model.value)||0];code.value=color.value.toUpperCase();name.textContent=`${brand.value} ${data[0]}`;hint.textContent=data[1]==="glb"?"Настоящий GLB-файл · потяните мышкой для вращения":"Процедурная модель · потяните мышкой для вращения";scene.build(data,brand.value,color.value)};brand.value="GLB Demo";models();render();brand.addEventListener("change",()=>{models();render()});model.addEventListener("change",render);color.addEventListener("input",render)}
 
-  function build(data,brand,color) {
-    if(current){scene.remove(current);current.traverse(o=>{o.geometry?.dispose();Array.isArray(o.material)?o.material.forEach(m=>m.dispose()):o.material?.dispose()})}
-    const [name,type,L,W,B,CL,CH,CO,WB,WR]=data, car=new THREE.Group(); car.rotation.y=-.55; scene.add(car); current=car;
-    const bodyMat=new THREE.MeshStandardMaterial({color,metalness:.72,roughness:.25}), trim=new THREE.MeshStandardMaterial({color:0x161c27,metalness:.32,roughness:.55}), glass=new THREE.MeshStandardMaterial({color:0x273b55,metalness:.18,roughness:.16}), tire=new THREE.MeshStandardMaterial({color:0x0c1017,roughness:.9}), rimMat=new THREE.MeshStandardMaterial({color:0xa8b3c5,metalness:.8,roughness:.25}), frontMat=new THREE.MeshStandardMaterial({color:0xffe3a0,emissive:0xffc958,emissiveIntensity:1.1}), rearMat=new THREE.MeshStandardMaterial({color:0xff5e59,emissive:0xff3b36,emissiveIntensity:.9});
-    const y=(type==="suv"||type==="crossover")?.6:.48, add=(g,m,p)=>{const x=new THREE.Mesh(g,m);x.position.set(...p);car.add(x);return x};
-    add(new THREE.BoxGeometry(L,B,W),bodyMat,[0,y,0]);
-    const HL=(type==="hatchback"?L*.24:L*.29),TL=(["hatchback","suv","crossover"].includes(type)?L*.15:L*.21);
-    const hood=add(new THREE.BoxGeometry(HL,.32,W*.91),bodyMat,[L/2-HL/2-.08,y+B/2+.15,0]); hood.rotation.z=-.045;
-    const trunk=add(new THREE.BoxGeometry(TL,.29,W*.9),bodyMat,[-L/2+TL/2+.08,y+B/2+.13,0]); trunk.rotation.z=.035;
-    add(new THREE.BoxGeometry(CL,CH,W*.79),glass,[CO,y+B/2+CH/2+.08,0]); add(new THREE.BoxGeometry(CL*.72,.17,W*.78),bodyMat,[CO-.08,y+B/2+CH+.16,0]);
-    add(new THREE.BoxGeometry(.27,.45,W*.96),trim,[L/2+.13,.21,0]); add(new THREE.BoxGeometry(.27,.45,W*.96),trim,[-L/2-.13,.21,0]); add(new THREE.BoxGeometry(L*.9,.17,W*1.02),trim,[0,-.02,0]);
-    const wg=new THREE.CylinderGeometry(WR,WR,.48,32),rg=new THREE.CylinderGeometry(WR*.51,WR*.51,.5,24),wx=WB/2,wz=W/2+.04;
-    [[wx,-.02,wz],[wx,-.02,-wz],[-wx,-.02,wz],[-wx,-.02,-wz]].forEach(p=>{const w=add(wg,tire,p);w.rotation.x=Math.PI/2;const r=add(rg,rimMat,p);r.rotation.x=Math.PI/2});
-    const fw=W*.21; add(new THREE.BoxGeometry(.13,.24,fw),frontMat,[L/2+.05,y+.12,W*.29]); add(new THREE.BoxGeometry(.13,.24,fw),frontMat,[L/2+.05,y+.12,-W*.29]); add(new THREE.BoxGeometry(.13,.23,fw),rearMat,[-L/2-.05,y+.12,W*.3]); add(new THREE.BoxGeometry(.13,.23,fw),rearMat,[-L/2-.05,y+.12,-W*.3]); add(new THREE.BoxGeometry(.14,type==="suv"?.46:.32,W*.37),trim,[L/2+.08,y-.12,0]);
-    car.add(badge(brand.toUpperCase(),.78,new THREE.Vector3(L/2+.155,y+.05,0),Math.PI/2)); car.add(badge(name.toUpperCase(),.86,new THREE.Vector3(-L/2-.155,y+.08,0),-Math.PI/2)); shadow.scale.set(L/4,W/3,1);
-  }
-  const resize=()=>{if(!host.clientWidth||!host.clientHeight)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight,false)}; new ResizeObserver(resize).observe(host); resize(); renderer.setAnimationLoop(()=>{controls.update();renderer.render(scene,camera)}); return {build};
-}
-
-function initCustomizer(scene) {
-  const brand=$("#carBrand"),model=$("#carModel"),color=$("#carColor"),code=$("#carColorCode"),name=$("#selectedCarName");
-  Object.keys(CARS).forEach(b=>brand.add(new Option(b,b)));
-  const models=()=>{model.innerHTML="";CARS[brand.value].forEach((m,i)=>model.add(new Option(m[0],i)))};
-  const render=()=>{const data=CARS[brand.value][Number(model.value)||0];code.value=color.value.toUpperCase();name.textContent=`${brand.value} ${data[0]}`;scene.build(data,brand.value,color.value)};
-  brand.value="Toyota";models();render();brand.addEventListener("change",()=>{models();render()});model.addEventListener("change",render);color.addEventListener("input",render);
-}
-
-injectCustomizer();
-document.querySelectorAll("input,select").forEach(control=>{if(!["carBrand","carModel","carColor"].includes(control.id)){control.addEventListener("input",calculateTotals);control.addEventListener("change",calculateTotals)}});
-$("#energyType").addEventListener("change",()=>{updateEnergy();calculateTotals()});
-$("#depreciationMode").addEventListener("change",()=>{updateDepMode();calculateTotals()});
-updateEnergy();updateDepMode();calculateTotals();initCustomizer(createScene());
+injectCustomizer();document.querySelectorAll("input,select").forEach(c=>{if(!["carBrand","carModel","carColor"].includes(c.id)){c.addEventListener("input",calculateTotals);c.addEventListener("change",calculateTotals)}});$("#energyType").addEventListener("change",()=>{updateEnergy();calculateTotals()});$("#depreciationMode").addEventListener("change",()=>{updateDepMode();calculateTotals()});updateEnergy();updateDepMode();calculateTotals();initCustomizer(createScene());
