@@ -18,14 +18,15 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
 .app {
-  width: min(1380px, calc(100% - 32px));
+  width: min(1480px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 38px 0 56px;
+  padding: 38px 0 64px;
 }
 
 .summary {
@@ -85,96 +86,232 @@ h1 {
   font-weight: 750;
 }
 
+.summary-hint {
+  margin: 18px 0 0;
+  color: #69758b;
+  font-size: 0.86rem;
+}
+
 .calculator {
   display: grid;
-  grid-template-columns: minmax(250px, 330px) minmax(360px, 1fr) minmax(250px, 330px);
-  gap: 28px;
-  align-items: center;
+  grid-template-columns: minmax(300px, 370px) minmax(420px, 1fr) minmax(300px, 370px);
+  gap: 24px;
+  align-items: start;
 }
 
 .expense-column {
   display: grid;
-  gap: 16px;
+  gap: 14px;
 }
 
 .expense-card {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 14px;
-  padding: 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
-  background: rgba(20, 24, 33, 0.82);
+  background: rgba(20, 24, 33, 0.86);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
-  cursor: text;
+  overflow: hidden;
   transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
 }
 
 .expense-card:hover,
-.expense-card:focus-within {
-  transform: translateY(-2px);
-  border-color: rgba(160, 177, 211, 0.35);
-  background: rgba(25, 30, 41, 0.96);
+.expense-card[open] {
+  border-color: rgba(160, 177, 211, 0.28);
+  background: rgba(24, 29, 40, 0.96);
+}
+
+.expense-card[open] {
+  transform: translateY(-1px);
+}
+
+.section-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.section-head::-webkit-details-marker {
+  display: none;
 }
 
 .expense-icon {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
   background: #242b38;
-  font-size: 1.3rem;
+  font-size: 1.22rem;
 }
 
 .expense-info {
   display: grid;
-  align-content: center;
+  min-width: 0;
   gap: 3px;
 }
 
 .expense-info strong {
-  font-size: 0.98rem;
+  font-size: 0.96rem;
 }
 
 .expense-info small {
+  overflow: hidden;
   color: #7f899d;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.input-wrap {
-  grid-column: 1 / -1;
+.category-total {
+  color: #d9e2f2;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.section-chevron {
+  color: #738098;
+  font-size: 1.1rem;
+  transition: transform 180ms ease;
+}
+
+.expense-section[open] .section-chevron {
+  transform: rotate(180deg);
+}
+
+.expense-body {
+  display: grid;
+  gap: 11px;
+  padding: 0 16px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.detail-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(126px, 46%);
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+}
+
+.detail-field > span:first-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.detail-field strong {
+  font-size: 0.82rem;
+}
+
+.detail-field small {
+  color: #6f7a8e;
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.field-control {
   display: flex;
   align-items: center;
-  padding: 0 14px;
+  min-width: 0;
+  padding: 0 10px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  border-radius: 11px;
   background: #0f131b;
 }
 
-.input-wrap:focus-within {
+.field-control:focus-within {
   border-color: #7188b8;
 }
 
-.input-wrap input {
+.field-control input,
+.field-control select {
   width: 100%;
-  padding: 13px 6px 13px 0;
+  min-width: 0;
+  padding: 10px 5px 10px 0;
   border: 0;
   outline: 0;
   background: transparent;
   color: #f7f9fc;
-  font-size: 1.12rem;
+  font-size: 0.84rem;
   font-weight: 750;
 }
 
-.input-wrap span {
-  color: #8a95a9;
+.field-control select {
+  cursor: pointer;
+}
+
+.field-control select option {
+  background: #151a24;
+  color: #f7f9fc;
+}
+
+.field-control > span {
+  color: #7f899d;
+  font-size: 0.7rem;
   font-weight: 700;
+  white-space: nowrap;
+}
+
+.field-control-select {
+  padding-right: 7px;
+}
+
+.conditional-fields {
+  display: grid;
+  gap: 11px;
+}
+
+.conditional-fields[hidden] {
+  display: none;
+}
+
+.calculated-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 4px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(108, 137, 196, 0.1);
+}
+
+.calculated-note span {
+  color: #8d9ab0;
+  font-size: 0.76rem;
+}
+
+.calculated-note strong {
+  color: #dce7fb;
+  font-size: 0.88rem;
+}
+
+.section-warning {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(237, 190, 102, 0.16);
+  border-radius: 11px;
+  background: rgba(237, 190, 102, 0.06);
+  color: #a89b83;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.purchase-card,
+.depreciation-card {
+  border-color: rgba(116, 145, 205, 0.24);
+  background: linear-gradient(145deg, rgba(31, 39, 55, 0.96), rgba(18, 23, 32, 0.92));
 }
 
 .car-stage {
-  position: relative;
-  min-height: 540px;
+  position: sticky;
+  top: 20px;
+  min-height: 620px;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -192,7 +329,7 @@ h1 {
 .car3d-view {
   width: 100%;
   height: 100%;
-  min-height: 540px;
+  min-height: 620px;
 }
 
 .car3d-view canvas {
@@ -219,36 +356,27 @@ h1 {
   color: #7f899d;
 }
 
-.purchase-card,
-.depreciation-card {
-  border-color: rgba(116, 145, 205, 0.24);
-  background: linear-gradient(145deg, rgba(31, 39, 55, 0.96), rgba(18, 23, 32, 0.9));
-}
-
-.depreciation-card .expense-info small {
-  color: #aab9d8;
-  font-weight: 700;
-}
-
-@media (max-width: 1050px) {
+@media (max-width: 1150px) {
   .calculator {
     grid-template-columns: 1fr 1fr;
   }
 
   .car-stage {
+    position: relative;
+    top: auto;
     grid-column: 1 / -1;
     grid-row: 1;
-    min-height: 360px;
+    min-height: 430px;
   }
 
   .car3d-view {
-    min-height: 360px;
+    min-height: 430px;
   }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 720px) {
   .app {
-    width: min(100% - 20px, 1380px);
+    width: min(100% - 20px, 1480px);
     padding-top: 24px;
   }
 
@@ -263,15 +391,30 @@ h1 {
 
   .car-stage {
     grid-column: auto;
-    min-height: 280px;
+    min-height: 300px;
     border-radius: 24px;
   }
 
   .car3d-view {
-    min-height: 280px;
+    min-height: 300px;
   }
 
-  .expense-column {
-    gap: 14px;
+  .detail-field {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .section-head {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .category-total {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .section-chevron {
+    grid-column: 3;
+    grid-row: 1 / span 2;
   }
 }
