@@ -27,57 +27,194 @@
           <small>в год</small>
         </div>
       </div>
+
+      <p class="summary-hint">Нажмите на карточку, чтобы раскрыть подробные расходы</p>
     </header>
 
     <section class="calculator">
       <div class="expense-column">
-        <label class="expense-card purchase-card">
-          <span class="expense-icon">🚘</span>
-          <span class="expense-info">
-            <strong>Стоимость покупки</strong>
-            <small>Цена автомобиля при покупке</small>
-          </span>
-          <span class="input-wrap">
-            <input id="purchasePrice" type="number" min="0" value="1500000">
-            <span>₽</span>
-          </span>
-        </label>
+        <details class="expense-card expense-section purchase-card">
+          <summary class="section-head">
+            <span class="expense-icon">🚘</span>
+            <span class="expense-info">
+              <strong>Покупка</strong>
+              <small>Цена и стартовые расходы</small>
+            </span>
+            <span class="category-total" data-category-total="purchase">0 ₽/мес</span>
+            <span class="section-chevron">⌄</span>
+          </summary>
 
-        <label class="expense-card">
-          <span class="expense-icon">⛽</span>
-          <span class="expense-info">
-            <strong>Топливо</strong>
-            <small>Расходы за месяц</small>
-          </span>
-          <span class="input-wrap">
-            <input type="number" min="0" value="12000" data-expense>
-            <span>₽</span>
-          </span>
-        </label>
+          <div class="expense-body">
+            <label class="detail-field" for="purchasePrice">
+              <span>
+                <strong>Стоимость автомобиля</strong>
+                <small>Цена в момент покупки</small>
+              </span>
+              <span class="field-control">
+                <input id="purchasePrice" type="number" min="0" value="1500000">
+                <span>₽</span>
+              </span>
+            </label>
 
-        <label class="expense-card">
-          <span class="expense-icon">🛡️</span>
-          <span class="expense-info">
-            <strong>Страховка</strong>
-            <small>Среднее за месяц</small>
-          </span>
-          <span class="input-wrap">
-            <input type="number" min="0" value="2500" data-expense>
-            <span>₽</span>
-          </span>
-        </label>
+            <label class="detail-field" for="initialCosts">
+              <span>
+                <strong>Стартовые расходы</strong>
+                <small>Регистрация, диагностика, доставка, аксессуары</small>
+              </span>
+              <span class="field-control">
+                <input id="initialCosts" type="number" min="0" value="0">
+                <span>₽</span>
+              </span>
+            </label>
 
-        <label class="expense-card">
-          <span class="expense-icon">🔧</span>
-          <span class="expense-info">
-            <strong>ТО и ремонт</strong>
-            <small>Среднее за месяц</small>
-          </span>
-          <span class="input-wrap">
-            <input type="number" min="0" value="4000" data-expense>
-            <span>₽</span>
-          </span>
-        </label>
+            <label class="detail-field" for="initialCostsYears">
+              <span>
+                <strong>Распределить стартовые расходы</strong>
+                <small>На предполагаемый срок владения</small>
+              </span>
+              <span class="field-control">
+                <input id="initialCostsYears" type="number" min="1" step="1" value="5">
+                <span>лет</span>
+              </span>
+            </label>
+          </div>
+        </details>
+
+        <details class="expense-card expense-section" open>
+          <summary class="section-head">
+            <span class="expense-icon">⛽</span>
+            <span class="expense-info">
+              <strong>Топливо и энергия</strong>
+              <small>Расчёт по пробегу и расходу</small>
+            </span>
+            <span class="category-total" data-category-total="fuel">0 ₽/мес</span>
+            <span class="section-chevron">⌄</span>
+          </summary>
+
+          <div class="expense-body">
+            <label class="detail-field" for="energyType">
+              <span>
+                <strong>Тип энергии</strong>
+                <small>Меняет единицы расхода</small>
+              </span>
+              <span class="field-control field-control-select">
+                <select id="energyType">
+                  <option value="petrol">Бензин</option>
+                  <option value="diesel">Дизель</option>
+                  <option value="gas">Газ</option>
+                  <option value="electric">Электричество</option>
+                </select>
+              </span>
+            </label>
+
+            <label class="detail-field" for="monthlyMileage">
+              <span>
+                <strong>Пробег в месяц</strong>
+                <small>Среднее расстояние за месяц</small>
+              </span>
+              <span class="field-control">
+                <input id="monthlyMileage" type="number" min="0" value="1500">
+                <span>км</span>
+              </span>
+            </label>
+
+            <label class="detail-field" for="energyConsumption">
+              <span>
+                <strong>Средний расход</strong>
+                <small>По бортовому компьютеру или паспорту</small>
+              </span>
+              <span class="field-control">
+                <input id="energyConsumption" type="number" min="0" step="0.1" value="10">
+                <span id="consumptionUnit">л/100 км</span>
+              </span>
+            </label>
+
+            <label class="detail-field" for="energyPrice">
+              <span>
+                <strong>Цена энергии</strong>
+                <small>Средняя цена за единицу</small>
+              </span>
+              <span class="field-control">
+                <input id="energyPrice" type="number" min="0" step="0.01" value="60">
+                <span id="energyPriceUnit">₽/л</span>
+              </span>
+            </label>
+
+            <label class="detail-field" for="fuelExtras">
+              <span>
+                <strong>Прочие расходы</strong>
+                <small>Прогрев, канистры, зарядки вне дома</small>
+              </span>
+              <span class="field-control">
+                <input id="fuelExtras" type="number" min="0" value="3000">
+                <span>₽/мес</span>
+              </span>
+            </label>
+          </div>
+        </details>
+
+        <details class="expense-card expense-section">
+          <summary class="section-head">
+            <span class="expense-icon">🛡️</span>
+            <span class="expense-info">
+              <strong>Страхование</strong>
+              <small>Обязательные и дополнительные полисы</small>
+            </span>
+            <span class="category-total" data-category-total="insurance">0 ₽/мес</span>
+            <span class="section-chevron">⌄</span>
+          </summary>
+
+          <div class="expense-body">
+            <label class="detail-field" for="osagoAnnual">
+              <span><strong>ОСАГО</strong><small>Стоимость полиса за год</small></span>
+              <span class="field-control"><input id="osagoAnnual" type="number" min="0" value="12000" data-expense data-category="insurance" data-period="year"><span>₽/год</span></span>
+            </label>
+
+            <label class="detail-field" for="kaskoAnnual">
+              <span><strong>КАСКО</strong><small>Оставьте 0, если его нет</small></span>
+              <span class="field-control"><input id="kaskoAnnual" type="number" min="0" value="18000" data-expense data-category="insurance" data-period="year"><span>₽/год</span></span>
+            </label>
+
+            <label class="detail-field" for="extraInsuranceAnnual">
+              <span><strong>Дополнительные полисы</strong><small>Жизнь, GAP, помощь на дороге</small></span>
+              <span class="field-control"><input id="extraInsuranceAnnual" type="number" min="0" value="0" data-expense data-category="insurance" data-period="year"><span>₽/год</span></span>
+            </label>
+          </div>
+        </details>
+
+        <details class="expense-card expense-section">
+          <summary class="section-head">
+            <span class="expense-icon">🔧</span>
+            <span class="expense-info">
+              <strong>ТО и ремонт</strong>
+              <small>Обслуживание, шины и уход</small>
+            </span>
+            <span class="category-total" data-category-total="maintenance">0 ₽/мес</span>
+            <span class="section-chevron">⌄</span>
+          </summary>
+
+          <div class="expense-body">
+            <label class="detail-field" for="serviceAnnual">
+              <span><strong>Плановое ТО</strong><small>Масло, фильтры и регламентные работы</small></span>
+              <span class="field-control"><input id="serviceAnnual" type="number" min="0" value="24000" data-expense data-category="maintenance" data-period="year"><span>₽/год</span></span>
+            </label>
+
+            <label class="detail-field" for="repairsAnnual">
+              <span><strong>Незапланированный ремонт</strong><small>Средний резерв на поломки</small></span>
+              <span class="field-control"><input id="repairsAnnual" type="number" min="0" value="12000" data-expense data-category="maintenance" data-period="year"><span>₽/год</span></span>
+            </label>
+
+            <label class="detail-field" for="tiresAnnual">
+              <span><strong>Шины и шиномонтаж</strong><small>Покупка, хранение и сезонная замена</small></span>
+              <span class="field-control"><input id="tiresAnnual" type="number" min="0" value="12000" data-expense data-category="maintenance" data-period="year"><span>₽/год</span></span>
+            </label>
+
+            <label class="detail-field" for="washingMonthly">
+              <span><strong>Мойка и уход</strong><small>Мойка, химчистка, расходники</small></span>
+              <span class="field-control"><input id="washingMonthly" type="number" min="0" value="0" data-expense data-category="maintenance" data-period="month"><span>₽/мес</span></span>
+            </label>
+          </div>
+        </details>
       </div>
 
       <div class="car-stage" aria-label="3D-модель автомобиля">
@@ -90,53 +227,157 @@
       </div>
 
       <div class="expense-column">
-        <label class="expense-card depreciation-card">
-          <span class="expense-icon">📉</span>
-          <span class="expense-info">
-            <strong>Амортизация</strong>
-            <small id="monthlyDepreciation">0 ₽ в месяц</small>
-          </span>
-          <span class="input-wrap">
-            <input id="depreciationRate" type="number" min="0" max="100" step="0.1" value="15">
-            <span>% в год</span>
-          </span>
-        </label>
+        <details class="expense-card expense-section depreciation-card" open>
+          <summary class="section-head">
+            <span class="expense-icon">📉</span>
+            <span class="expense-info">
+              <strong>Амортизация</strong>
+              <small>Потеря стоимости автомобиля</small>
+            </span>
+            <span class="category-total" data-category-total="depreciation">0 ₽/мес</span>
+            <span class="section-chevron">⌄</span>
+          </summary>
 
-        <label class="expense-card">
-          <span class="expense-icon">🅿️</span>
-          <span class="expense-info">
-            <strong>Парковка</strong>
-            <small>Расходы за месяц</small>
-          </span>
-          <span class="input-wrap">
-            <input type="number" min="0" value="3000" data-expense>
-            <span>₽</span>
-          </span>
-        </label>
+          <div class="expense-body">
+            <label class="detail-field" for="depreciationMode">
+              <span><strong>Способ расчёта</strong><small>Выберите удобный вариант</small></span>
+              <span class="field-control field-control-select">
+                <select id="depreciationMode">
+                  <option value="percent">Процент в год</option>
+                  <option value="resale">Цена перепродажи</option>
+                </select>
+              </span>
+            </label>
 
-        <label class="expense-card">
-          <span class="expense-icon">🏛️</span>
-          <span class="expense-info">
-            <strong>Налог</strong>
-            <small>Среднее за месяц</small>
-          </span>
-          <span class="input-wrap">
-            <input type="number" min="0" value="500" data-expense>
-            <span>₽</span>
-          </span>
-        </label>
+            <div id="depreciationPercentFields">
+              <label class="detail-field" for="depreciationRate">
+                <span><strong>Потеря стоимости</strong><small>Процент от цены покупки за год</small></span>
+                <span class="field-control"><input id="depreciationRate" type="number" min="0" max="100" step="0.1" value="15"><span>%/год</span></span>
+              </label>
+            </div>
 
-        <label class="expense-card">
-          <span class="expense-icon">📄</span>
-          <span class="expense-info">
-            <strong>Кредит и прочее</strong>
-            <small>Ежемесячные расходы</small>
-          </span>
-          <span class="input-wrap">
-            <input type="number" min="0" value="0" data-expense>
-            <span>₽</span>
-          </span>
-        </label>
+            <div id="depreciationResaleFields" class="conditional-fields" hidden>
+              <label class="detail-field" for="resalePrice">
+                <span><strong>Ожидаемая цена продажи</strong><small>За сколько планируете продать автомобиль</small></span>
+                <span class="field-control"><input id="resalePrice" type="number" min="0" value="600000"><span>₽</span></span>
+              </label>
+
+              <label class="detail-field" for="resaleYears">
+                <span><strong>Продать через</strong><small>Планируемый срок владения</small></span>
+                <span class="field-control"><input id="resaleYears" type="number" min="1" step="1" value="5"><span>лет</span></span>
+              </label>
+            </div>
+
+            <div class="calculated-note">
+              <span>Амортизация в месяц</span>
+              <strong id="monthlyDepreciation">0 ₽</strong>
+            </div>
+          </div>
+        </details>
+
+        <details class="expense-card expense-section">
+          <summary class="section-head">
+            <span class="expense-icon">🅿️</span>
+            <span class="expense-info">
+              <strong>Парковка и дороги</strong>
+              <small>Стоянки, гараж и платные трассы</small>
+            </span>
+            <span class="category-total" data-category-total="parking">0 ₽/мес</span>
+            <span class="section-chevron">⌄</span>
+          </summary>
+
+          <div class="expense-body">
+            <label class="detail-field" for="regularParkingMonthly">
+              <span><strong>Постоянная парковка</strong><small>Двор, паркинг или место у работы</small></span>
+              <span class="field-control"><input id="regularParkingMonthly" type="number" min="0" value="2500" data-expense data-category="parking" data-period="month"><span>₽/мес</span></span>
+            </label>
+
+            <label class="detail-field" for="paidParkingMonthly">
+              <span><strong>Платная парковка</strong><small>Городские парковочные зоны</small></span>
+              <span class="field-control"><input id="paidParkingMonthly" type="number" min="0" value="500" data-expense data-category="parking" data-period="month"><span>₽/мес</span></span>
+            </label>
+
+            <label class="detail-field" for="garageMonthly">
+              <span><strong>Гараж или хранение</strong><small>Аренда, охрана и обслуживание</small></span>
+              <span class="field-control"><input id="garageMonthly" type="number" min="0" value="0" data-expense data-category="parking" data-period="month"><span>₽/мес</span></span>
+            </label>
+
+            <label class="detail-field" for="tollRoadsMonthly">
+              <span><strong>Платные дороги</strong><small>Трассы, транспондер и проезды</small></span>
+              <span class="field-control"><input id="tollRoadsMonthly" type="number" min="0" value="0" data-expense data-category="parking" data-period="month"><span>₽/мес</span></span>
+            </label>
+          </div>
+        </details>
+
+        <details class="expense-card expense-section">
+          <summary class="section-head">
+            <span class="expense-icon">🏛️</span>
+            <span class="expense-info">
+              <strong>Налоги и документы</strong>
+              <small>Обязательные государственные расходы</small>
+            </span>
+            <span class="category-total" data-category-total="taxes">0 ₽/мес</span>
+            <span class="section-chevron">⌄</span>
+          </summary>
+
+          <div class="expense-body">
+            <label class="detail-field" for="transportTaxAnnual">
+              <span><strong>Транспортный налог</strong><small>Полная сумма за год</small></span>
+              <span class="field-control"><input id="transportTaxAnnual" type="number" min="0" value="6000" data-expense data-category="taxes" data-period="year"><span>₽/год</span></span>
+            </label>
+
+            <label class="detail-field" for="inspectionAnnual">
+              <span><strong>Техосмотр и диагностика</strong><small>Средняя сумма за год</small></span>
+              <span class="field-control"><input id="inspectionAnnual" type="number" min="0" value="0" data-expense data-category="taxes" data-period="year"><span>₽/год</span></span>
+            </label>
+
+            <label class="detail-field" for="permitsAnnual">
+              <span><strong>Разрешения и пропуска</strong><small>Резидентские разрешения и пропуска</small></span>
+              <span class="field-control"><input id="permitsAnnual" type="number" min="0" value="0" data-expense data-category="taxes" data-period="year"><span>₽/год</span></span>
+            </label>
+          </div>
+        </details>
+
+        <details class="expense-card expense-section">
+          <summary class="section-head">
+            <span class="expense-icon">📄</span>
+            <span class="expense-info">
+              <strong>Финансирование и прочее</strong>
+              <small>Проценты, штрафы и подписки</small>
+            </span>
+            <span class="category-total" data-category-total="other">0 ₽/мес</span>
+            <span class="section-chevron">⌄</span>
+          </summary>
+
+          <div class="expense-body">
+            <p class="section-warning">Платёж по телу кредита не добавляется: стоимость автомобиля уже учитывается через амортизацию. Здесь указывайте только проценты и комиссии.</p>
+
+            <label class="detail-field" for="loanInterestMonthly">
+              <span><strong>Проценты по кредиту</strong><small>Только проценты, без погашения основного долга</small></span>
+              <span class="field-control"><input id="loanInterestMonthly" type="number" min="0" value="0" data-expense data-category="other" data-period="month"><span>₽/мес</span></span>
+            </label>
+
+            <label class="detail-field" for="bankFeesMonthly">
+              <span><strong>Банковские комиссии</strong><small>Обслуживание кредита или лизинга</small></span>
+              <span class="field-control"><input id="bankFeesMonthly" type="number" min="0" value="0" data-expense data-category="other" data-period="month"><span>₽/мес</span></span>
+            </label>
+
+            <label class="detail-field" for="finesMonthly">
+              <span><strong>Штрафы</strong><small>Средняя сумма за месяц</small></span>
+              <span class="field-control"><input id="finesMonthly" type="number" min="0" value="0" data-expense data-category="other" data-period="month"><span>₽/мес</span></span>
+            </label>
+
+            <label class="detail-field" for="subscriptionsMonthly">
+              <span><strong>Подписки и сервисы</strong><small>Навигация, телематика, приложения</small></span>
+              <span class="field-control"><input id="subscriptionsMonthly" type="number" min="0" value="0" data-expense data-category="other" data-period="month"><span>₽/мес</span></span>
+            </label>
+
+            <label class="detail-field" for="accessoriesAnnual">
+              <span><strong>Аксессуары и улучшения</strong><small>Коврики, регистратор, музыка и другое</small></span>
+              <span class="field-control"><input id="accessoriesAnnual" type="number" min="0" value="0" data-expense data-category="other" data-period="year"><span>₽/год</span></span>
+            </label>
+          </div>
+        </details>
       </div>
     </section>
   </main>
