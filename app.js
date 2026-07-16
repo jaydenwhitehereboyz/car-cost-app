@@ -1,387 +1,121 @@
 import * as THREE from "https://esm.sh/three@0.166.1";
 import { OrbitControls } from "https://esm.sh/three@0.166.1/examples/jsm/controls/OrbitControls.js";
 
-const monthlyTotalElement = document.querySelector("#monthlyTotal");
-const weeklyTotalElement = document.querySelector("#weeklyTotal");
-const yearlyTotalElement = document.querySelector("#yearlyTotal");
-const monthlyDepreciationElement = document.querySelector("#monthlyDepreciation");
+const $ = (s) => document.querySelector(s);
+const money = new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 });
+const positive = (id) => { const v = Number(typeof id === "string" ? $(`#${id}`)?.value : id?.value); return Number.isFinite(v) && v > 0 ? v : 0; };
+const monthly = (input) => input.dataset.period === "year" ? positive(input) / 12 : positive(input);
 
-const currencyFormatter = new Intl.NumberFormat("ru-RU", {
-  style: "currency",
-  currency: "RUB",
-  maximumFractionDigits: 0
-});
-
-function getPositiveNumber(inputOrId) {
-  const input = typeof inputOrId === "string"
-    ? document.querySelector(`#${inputOrId}`)
-    : inputOrId;
-
-  const value = Number(input?.value);
-  return Number.isFinite(value) && value > 0 ? value : 0;
+function direct(category) {
+  return [...document.querySelectorAll(`[data-expense][data-category="${category}"]`)].reduce((sum, input) => sum + monthly(input), 0);
 }
 
-function formatMonthly(value) {
-  return `${currencyFormatter.format(value)}/мес`;
-}
-
-function convertToMonthly(input) {
-  const value = getPositiveNumber(input);
-  return input.dataset.period === "year" ? value / 12 : value;
-}
-
-function calculateDirectCategory(category) {
-  const inputs = document.querySelectorAll(`[data-expense][data-category="${category}"]`);
-  return Array.from(inputs).reduce((total, input) => total + convertToMonthly(input), 0);
-}
-
-function calculatePurchaseMonthly() {
-  const initialCosts = getPositiveNumber("initialCosts");
-  const years = getPositiveNumber("initialCostsYears");
-
-  return years > 0 ? initialCosts / (years * 12) : 0;
-}
-
-function calculateFuelMonthly() {
-  const monthlyMileage = getPositiveNumber("monthlyMileage");
-  const consumption = getPositiveNumber("energyConsumption");
-  const energyPrice = getPositiveNumber("energyPrice");
-  const extras = getPositiveNumber("fuelExtras");
-
-  return monthlyMileage * consumption / 100 * energyPrice + extras;
-}
-
-function calculateDepreciationMonthly() {
-  const purchasePrice = getPositiveNumber("purchasePrice");
-  const mode = document.querySelector("#depreciationMode").value;
-
-  if (mode === "resale") {
-    const resalePrice = getPositiveNumber("resalePrice");
-    const years = getPositiveNumber("resaleYears");
-    const totalLoss = Math.max(purchasePrice - resalePrice, 0);
-
-    return years > 0 ? totalLoss / (years * 12) : 0;
+function depreciation() {
+  const price = positive("purchasePrice");
+  if ($("#depreciationMode").value === "resale") {
+    const years = positive("resaleYears");
+    return years ? Math.max(price - positive("resalePrice"), 0) / (years * 12) : 0;
   }
-
-  const rate = getPositiveNumber("depreciationRate");
-  return purchasePrice * (rate / 100) / 12;
-}
-
-function updateCategoryTotal(category, value) {
-  const element = document.querySelector(`[data-category-total="${category}"]`);
-
-  if (element) {
-    element.textContent = formatMonthly(value);
-  }
+  return price * positive("depreciationRate") / 1200;
 }
 
 function calculateTotals() {
-  const categoryTotals = {
-    purchase: calculatePurchaseMonthly(),
-    fuel: calculateFuelMonthly(),
-    insurance: calculateDirectCategory("insurance"),
-    maintenance: calculateDirectCategory("maintenance"),
-    depreciation: calculateDepreciationMonthly(),
-    parking: calculateDirectCategory("parking"),
-    taxes: calculateDirectCategory("taxes"),
-    other: calculateDirectCategory("other")
+  const years = positive("initialCostsYears");
+  const totals = {
+    purchase: years ? positive("initialCosts") / (years * 12) : 0,
+    fuel: positive("monthlyMileage") * positive("energyConsumption") / 100 * positive("energyPrice") + positive("fuelExtras"),
+    insurance: direct("insurance"), maintenance: direct("maintenance"), depreciation: depreciation(),
+    parking: direct("parking"), taxes: direct("taxes"), other: direct("other")
   };
-
-  Object.entries(categoryTotals).forEach(([category, value]) => {
-    updateCategoryTotal(category, value);
-  });
-
-  const monthlyTotal = Object.values(categoryTotals).reduce((total, value) => total + value, 0);
-  const weeklyTotal = monthlyTotal * 12 / 52;
-  const yearlyTotal = monthlyTotal * 12;
-
-  monthlyDepreciationElement.textContent = currencyFormatter.format(categoryTotals.depreciation);
-  monthlyTotalElement.textContent = currencyFormatter.format(monthlyTotal);
-  weeklyTotalElement.textContent = currencyFormatter.format(weeklyTotal);
-  yearlyTotalElement.textContent = currencyFormatter.format(yearlyTotal);
+  Object.entries(totals).forEach(([key, value]) => { const el = $(`[data-category-total="${key}"]`); if (el) el.textContent = `${money.format(value)}/мес`; });
+  const total = Object.values(totals).reduce((a, b) => a + b, 0);
+  $("#monthlyDepreciation").textContent = money.format(totals.depreciation);
+  $("#monthlyTotal").textContent = money.format(total);
+  $("#weeklyTotal").textContent = money.format(total * 12 / 52);
+  $("#yearlyTotal").textContent = money.format(total * 12);
 }
 
-function updateEnergyUnits() {
-  const isElectric = document.querySelector("#energyType").value === "electric";
-  document.querySelector("#consumptionUnit").textContent = isElectric ? "кВт⋅ч/100 км" : "л/100 км";
-  document.querySelector("#energyPriceUnit").textContent = isElectric ? "₽/кВт⋅ч" : "₽/л";
+function updateEnergy() {
+  const electric = $("#energyType").value === "electric";
+  $("#consumptionUnit").textContent = electric ? "кВт⋅ч/100 км" : "л/100 км";
+  $("#energyPriceUnit").textContent = electric ? "₽/кВт⋅ч" : "₽/л";
 }
 
-function updateDepreciationMode() {
-  const isResaleMode = document.querySelector("#depreciationMode").value === "resale";
-  document.querySelector("#depreciationPercentFields").hidden = isResaleMode;
-  document.querySelector("#depreciationResaleFields").hidden = !isResaleMode;
+function updateDepMode() {
+  const resale = $("#depreciationMode").value === "resale";
+  $("#depreciationPercentFields").hidden = resale;
+  $("#depreciationResaleFields").hidden = !resale;
 }
 
-function createCarScene() {
-  const container = document.querySelector("#car3d");
+const CARS = {
+  Toyota: [["Camry","sedan",5.10,2.28,1.03,2.45,.96,-.10,3.42,.57],["RAV4","suv",4.75,2.35,1.28,2.55,1.08,-.15,3.18,.62]],
+  BMW: [["3 Series","sedan",4.92,2.24,.98,2.32,.90,-.20,3.30,.58],["X5","suv",5.00,2.42,1.34,2.65,1.12,-.14,3.35,.66]],
+  Mercedes: [["C-Class","sedan",4.85,2.20,1.00,2.30,.92,-.16,3.24,.57],["GLC","suv",4.78,2.34,1.27,2.50,1.06,-.12,3.15,.63]],
+  Tesla: [["Model 3","fastback",4.76,2.22,.93,2.48,.88,-.08,3.16,.57],["Model Y","crossover",4.78,2.30,1.20,2.62,1.02,-.08,3.18,.62]],
+  Volkswagen: [["Golf","hatchback",4.35,2.16,1.02,2.48,.96,-.20,2.88,.54],["Tiguan","suv",4.62,2.28,1.24,2.48,1.05,-.12,3.02,.61]],
+  Kia: [["K5","fastback",5.00,2.27,.96,2.48,.90,-.13,3.36,.57],["Sportage","suv",4.66,2.31,1.25,2.48,1.05,-.10,3.06,.62]],
+  Hyundai: [["Solaris","sedan",4.40,2.12,1.00,2.18,.93,-.12,2.92,.53],["Tucson","suv",4.63,2.30,1.25,2.48,1.05,-.10,3.05,.62]],
+  Lada: [["Vesta","sedan",4.45,2.14,1.01,2.22,.94,-.12,2.96,.54],["Niva Travel","suv",4.20,2.12,1.28,2.18,1.07,-.16,2.70,.61]]
+};
 
-  if (!container) {
-    return;
+function injectCustomizer() {
+  const stage = $(".car-stage");
+  stage.insertAdjacentHTML("afterbegin", `<div class="car-customizer"><label><span>Марка</span><select id="carBrand"></select></label><label><span>Модель</span><select id="carModel"></select></label><label class="car-color-field"><span>Цвет</span><span class="car-color-control"><input id="carColor" type="color" value="#79869d"><output id="carColorCode">#79869D</output></span></label></div>`);
+  const label = $(".car-label");
+  label.innerHTML = `<span id="selectedCarName">Toyota Camry</span><small>Потяните мышкой, приблизьте шильдики колесом</small>`;
+  const style = document.createElement("style");
+  style.textContent = `.car-customizer{position:absolute;top:18px;left:18px;right:18px;z-index:4;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:16px;background:rgba(11,15,22,.84);box-shadow:0 14px 32px rgba(0,0,0,.24);backdrop-filter:blur(14px)}.car-customizer label{display:grid;gap:6px;min-width:0}.car-customizer label>span:first-child{color:#7f899d;font-size:.68rem;font-weight:750}.car-customizer select,.car-color-control{width:100%;min-width:0;height:38px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:#111722;color:#f5f7fb;font-size:.78rem;font-weight:750}.car-customizer select{padding:0 9px;outline:0;cursor:pointer}.car-customizer select option{background:#151a24}.car-color-control{display:flex;align-items:center;gap:8px;padding:4px 8px 4px 5px}.car-color-control input{width:32px;height:28px;padding:0;border:0;background:transparent;cursor:pointer}.car-color-control output{color:#cbd5e6;font-size:.72rem;font-weight:800}@media(max-width:720px){.car-customizer{grid-template-columns:1fr 1fr}.car-color-field{grid-column:1/-1}.car-stage,.car3d-view{min-height:430px!important}}`;
+  document.head.appendChild(style);
+}
+
+function badge(text, width, pos, rotation) {
+  const canvas = document.createElement("canvas"); canvas.width = 512; canvas.height = 128;
+  const ctx = canvas.getContext("2d"); ctx.font = "700 58px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.lineWidth = 8; ctx.strokeStyle = "rgba(5,8,13,.95)"; ctx.strokeText(text,256,64); ctx.fillStyle = "#e8edf6"; ctx.fillText(text,256,64);
+  const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width,.17), new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,side:THREE.DoubleSide}));
+  mesh.position.copy(pos); mesh.rotation.y = rotation; return mesh;
+}
+
+function createScene() {
+  const host = $("#car3d"), scene = new THREE.Scene(); scene.fog = new THREE.Fog(0x0e1219,12,22);
+  const camera = new THREE.PerspectiveCamera(40,1,.1,100); camera.position.set(7.2,4.1,8.4);
+  const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.outputColorSpace=THREE.SRGBColorSpace; host.appendChild(renderer.domElement);
+  const controls = new OrbitControls(camera,renderer.domElement); Object.assign(controls,{enableDamping:true,enablePan:false,enableZoom:true,autoRotate:true,autoRotateSpeed:1.25,minDistance:5.2,maxDistance:14,minPolarAngle:Math.PI/3.5,maxPolarAngle:Math.PI/2.05}); controls.target.set(0,.8,0);
+  scene.add(new THREE.HemisphereLight(0xdce8ff,0x171b24,2.5)); const key=new THREE.DirectionalLight(0xffffff,3.2); key.position.set(6,9,7); scene.add(key); const rim=new THREE.DirectionalLight(0x789dff,2.1); rim.position.set(-7,4,-6); scene.add(rim);
+  const floor=new THREE.Mesh(new THREE.CircleGeometry(7.5,64),new THREE.MeshStandardMaterial({color:0x141922,roughness:.92,metalness:.08})); floor.rotation.x=-Math.PI/2; floor.position.y=-.56; scene.add(floor);
+  const shadow=new THREE.Mesh(new THREE.CircleGeometry(3.25,64),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.28,depthWrite:false})); shadow.rotation.x=-Math.PI/2; shadow.position.y=-.54; scene.add(shadow);
+  let current;
+
+  function build(data,brand,color) {
+    if(current){scene.remove(current);current.traverse(o=>{o.geometry?.dispose();Array.isArray(o.material)?o.material.forEach(m=>m.dispose()):o.material?.dispose()})}
+    const [name,type,L,W,B,CL,CH,CO,WB,WR]=data, car=new THREE.Group(); car.rotation.y=-.55; scene.add(car); current=car;
+    const bodyMat=new THREE.MeshStandardMaterial({color,metalness:.72,roughness:.25}), trim=new THREE.MeshStandardMaterial({color:0x161c27,metalness:.32,roughness:.55}), glass=new THREE.MeshStandardMaterial({color:0x273b55,metalness:.18,roughness:.16}), tire=new THREE.MeshStandardMaterial({color:0x0c1017,roughness:.9}), rimMat=new THREE.MeshStandardMaterial({color:0xa8b3c5,metalness:.8,roughness:.25}), frontMat=new THREE.MeshStandardMaterial({color:0xffe3a0,emissive:0xffc958,emissiveIntensity:1.1}), rearMat=new THREE.MeshStandardMaterial({color:0xff5e59,emissive:0xff3b36,emissiveIntensity:.9});
+    const y=(type==="suv"||type==="crossover")?.6:.48, add=(g,m,p)=>{const x=new THREE.Mesh(g,m);x.position.set(...p);car.add(x);return x};
+    add(new THREE.BoxGeometry(L,B,W),bodyMat,[0,y,0]);
+    const HL=(type==="hatchback"?L*.24:L*.29),TL=(["hatchback","suv","crossover"].includes(type)?L*.15:L*.21);
+    const hood=add(new THREE.BoxGeometry(HL,.32,W*.91),bodyMat,[L/2-HL/2-.08,y+B/2+.15,0]); hood.rotation.z=-.045;
+    const trunk=add(new THREE.BoxGeometry(TL,.29,W*.9),bodyMat,[-L/2+TL/2+.08,y+B/2+.13,0]); trunk.rotation.z=.035;
+    add(new THREE.BoxGeometry(CL,CH,W*.79),glass,[CO,y+B/2+CH/2+.08,0]); add(new THREE.BoxGeometry(CL*.72,.17,W*.78),bodyMat,[CO-.08,y+B/2+CH+.16,0]);
+    add(new THREE.BoxGeometry(.27,.45,W*.96),trim,[L/2+.13,.21,0]); add(new THREE.BoxGeometry(.27,.45,W*.96),trim,[-L/2-.13,.21,0]); add(new THREE.BoxGeometry(L*.9,.17,W*1.02),trim,[0,-.02,0]);
+    const wg=new THREE.CylinderGeometry(WR,WR,.48,32),rg=new THREE.CylinderGeometry(WR*.51,WR*.51,.5,24),wx=WB/2,wz=W/2+.04;
+    [[wx,-.02,wz],[wx,-.02,-wz],[-wx,-.02,wz],[-wx,-.02,-wz]].forEach(p=>{const w=add(wg,tire,p);w.rotation.x=Math.PI/2;const r=add(rg,rimMat,p);r.rotation.x=Math.PI/2});
+    const fw=W*.21; add(new THREE.BoxGeometry(.13,.24,fw),frontMat,[L/2+.05,y+.12,W*.29]); add(new THREE.BoxGeometry(.13,.24,fw),frontMat,[L/2+.05,y+.12,-W*.29]); add(new THREE.BoxGeometry(.13,.23,fw),rearMat,[-L/2-.05,y+.12,W*.3]); add(new THREE.BoxGeometry(.13,.23,fw),rearMat,[-L/2-.05,y+.12,-W*.3]); add(new THREE.BoxGeometry(.14,type==="suv"?.46:.32,W*.37),trim,[L/2+.08,y-.12,0]);
+    car.add(badge(brand.toUpperCase(),.78,new THREE.Vector3(L/2+.155,y+.05,0),Math.PI/2)); car.add(badge(name.toUpperCase(),.86,new THREE.Vector3(-L/2-.155,y+.08,0),-Math.PI/2)); shadow.scale.set(L/4,W/3,1);
   }
-
-  const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x0e1219, 12, 22);
-
-  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-  camera.position.set(7.2, 4.1, 8.4);
-
-  const renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    alpha: true
-  });
-
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  container.appendChild(renderer.domElement);
-
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.enablePan = false;
-  controls.enableZoom = true;
-  controls.autoRotate = true;
-  controls.autoRotateSpeed = 1.25;
-  controls.minDistance = 6;
-  controls.maxDistance = 14;
-  controls.minPolarAngle = Math.PI / 3.5;
-  controls.maxPolarAngle = Math.PI / 2.05;
-  controls.target.set(0, 0.75, 0);
-
-  scene.add(new THREE.HemisphereLight(0xdce8ff, 0x171b24, 2.5));
-
-  const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
-  keyLight.position.set(6, 9, 7);
-  scene.add(keyLight);
-
-  const rimLight = new THREE.DirectionalLight(0x789dff, 2.1);
-  rimLight.position.set(-7, 4, -6);
-  scene.add(rimLight);
-
-  const floor = new THREE.Mesh(
-    new THREE.CircleGeometry(7.5, 64),
-    new THREE.MeshStandardMaterial({
-      color: 0x141922,
-      roughness: 0.92,
-      metalness: 0.08
-    })
-  );
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.y = -0.56;
-  scene.add(floor);
-
-  const shadow = new THREE.Mesh(
-    new THREE.CircleGeometry(3.25, 64),
-    new THREE.MeshBasicMaterial({
-      color: 0x000000,
-      transparent: true,
-      opacity: 0.28,
-      depthWrite: false
-    })
-  );
-  shadow.rotation.x = -Math.PI / 2;
-  shadow.scale.set(1.25, 0.72, 1);
-  shadow.position.y = -0.54;
-  scene.add(shadow);
-
-  const car = new THREE.Group();
-  car.rotation.y = -0.55;
-  scene.add(car);
-
-  const bodyMaterial = new THREE.MeshStandardMaterial({
-    color: 0x79869d,
-    metalness: 0.72,
-    roughness: 0.25
-  });
-
-  const trimMaterial = new THREE.MeshStandardMaterial({
-    color: 0x161c27,
-    metalness: 0.32,
-    roughness: 0.55
-  });
-
-  const glassMaterial = new THREE.MeshStandardMaterial({
-    color: 0x273b55,
-    metalness: 0.18,
-    roughness: 0.16
-  });
-
-  const tireMaterial = new THREE.MeshStandardMaterial({
-    color: 0x0c1017,
-    metalness: 0.08,
-    roughness: 0.9
-  });
-
-  const rimMaterial = new THREE.MeshStandardMaterial({
-    color: 0xa8b3c5,
-    metalness: 0.8,
-    roughness: 0.25
-  });
-
-  const frontLightMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffe3a0,
-    emissive: 0xffc958,
-    emissiveIntensity: 1.1,
-    roughness: 0.25
-  });
-
-  const rearLightMaterial = new THREE.MeshStandardMaterial({
-    color: 0xff5e59,
-    emissive: 0xff3b36,
-    emissiveIntensity: 0.9,
-    roughness: 0.3
-  });
-
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(5.05, 1.05, 2.28),
-    bodyMaterial
-  );
-  body.position.y = 0.48;
-  car.add(body);
-
-  const hood = new THREE.Mesh(
-    new THREE.BoxGeometry(1.55, 0.34, 2.08),
-    bodyMaterial
-  );
-  hood.position.set(1.72, 1.03, 0);
-  hood.rotation.z = -0.05;
-  car.add(hood);
-
-  const trunk = new THREE.Mesh(
-    new THREE.BoxGeometry(1.08, 0.3, 2.06),
-    bodyMaterial
-  );
-  trunk.position.set(-1.92, 0.94, 0);
-  trunk.rotation.z = 0.04;
-  car.add(trunk);
-
-  const cabin = new THREE.Mesh(
-    new THREE.BoxGeometry(2.48, 0.98, 1.82),
-    glassMaterial
-  );
-  cabin.position.set(-0.05, 1.36, 0);
-  cabin.scale.set(1, 1, 0.96);
-  car.add(cabin);
-
-  const roof = new THREE.Mesh(
-    new THREE.BoxGeometry(1.75, 0.18, 1.78),
-    bodyMaterial
-  );
-  roof.position.set(-0.2, 1.92, 0);
-  car.add(roof);
-
-  const frontBumper = new THREE.Mesh(
-    new THREE.BoxGeometry(0.28, 0.46, 2.18),
-    trimMaterial
-  );
-  frontBumper.position.set(2.64, 0.21, 0);
-  car.add(frontBumper);
-
-  const rearBumper = new THREE.Mesh(
-    new THREE.BoxGeometry(0.28, 0.46, 2.18),
-    trimMaterial
-  );
-  rearBumper.position.set(-2.64, 0.21, 0);
-  car.add(rearBumper);
-
-  const lowerTrim = new THREE.Mesh(
-    new THREE.BoxGeometry(4.55, 0.17, 2.34),
-    trimMaterial
-  );
-  lowerTrim.position.set(0, -0.02, 0);
-  car.add(lowerTrim);
-
-  const wheelGeometry = new THREE.CylinderGeometry(0.57, 0.57, 0.48, 32);
-  const rimGeometry = new THREE.CylinderGeometry(0.29, 0.29, 0.5, 24);
-
-  const wheelPositions = [
-    [1.7, -0.02, 1.18],
-    [1.7, -0.02, -1.18],
-    [-1.72, -0.02, 1.18],
-    [-1.72, -0.02, -1.18]
-  ];
-
-  wheelPositions.forEach(([x, y, z]) => {
-    const wheel = new THREE.Mesh(wheelGeometry, tireMaterial);
-    wheel.rotation.x = Math.PI / 2;
-    wheel.position.set(x, y, z);
-    car.add(wheel);
-
-    const rim = new THREE.Mesh(rimGeometry, rimMaterial);
-    rim.rotation.x = Math.PI / 2;
-    rim.position.set(x, y, z);
-    car.add(rim);
-  });
-
-  const frontLightLeft = new THREE.Mesh(
-    new THREE.BoxGeometry(0.13, 0.25, 0.48),
-    frontLightMaterial
-  );
-  frontLightLeft.position.set(2.55, 0.61, 0.66);
-  car.add(frontLightLeft);
-
-  const frontLightRight = frontLightLeft.clone();
-  frontLightRight.position.z = -0.66;
-  car.add(frontLightRight);
-
-  const rearLightLeft = new THREE.Mesh(
-    new THREE.BoxGeometry(0.13, 0.24, 0.46),
-    rearLightMaterial
-  );
-  rearLightLeft.position.set(-2.55, 0.61, 0.67);
-  car.add(rearLightLeft);
-
-  const rearLightRight = rearLightLeft.clone();
-  rearLightRight.position.z = -0.67;
-  car.add(rearLightRight);
-
-  const frontGrille = new THREE.Mesh(
-    new THREE.BoxGeometry(0.14, 0.32, 0.82),
-    trimMaterial
-  );
-  frontGrille.position.set(2.59, 0.35, 0);
-  car.add(frontGrille);
-
-  function resizeScene() {
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-
-    if (width === 0 || height === 0) {
-      return;
-    }
-
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    renderer.setSize(width, height, false);
-  }
-
-  const resizeObserver = new ResizeObserver(resizeScene);
-  resizeObserver.observe(container);
-  resizeScene();
-
-  renderer.setAnimationLoop(() => {
-    controls.update();
-    renderer.render(scene, camera);
-  });
+  const resize=()=>{if(!host.clientWidth||!host.clientHeight)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight,false)}; new ResizeObserver(resize).observe(host); resize(); renderer.setAnimationLoop(()=>{controls.update();renderer.render(scene,camera)}); return {build};
 }
 
-const calculatorControls = document.querySelectorAll("input, select");
+function initCustomizer(scene) {
+  const brand=$("#carBrand"),model=$("#carModel"),color=$("#carColor"),code=$("#carColorCode"),name=$("#selectedCarName");
+  Object.keys(CARS).forEach(b=>brand.add(new Option(b,b)));
+  const models=()=>{model.innerHTML="";CARS[brand.value].forEach((m,i)=>model.add(new Option(m[0],i)))};
+  const render=()=>{const data=CARS[brand.value][Number(model.value)||0];code.value=color.value.toUpperCase();name.textContent=`${brand.value} ${data[0]}`;scene.build(data,brand.value,color.value)};
+  brand.value="Toyota";models();render();brand.addEventListener("change",()=>{models();render()});model.addEventListener("change",render);color.addEventListener("input",render);
+}
 
-calculatorControls.forEach((control) => {
-  control.addEventListener("input", calculateTotals);
-  control.addEventListener("change", calculateTotals);
-});
-
-document.querySelector("#energyType").addEventListener("change", () => {
-  updateEnergyUnits();
-  calculateTotals();
-});
-
-document.querySelector("#depreciationMode").addEventListener("change", () => {
-  updateDepreciationMode();
-  calculateTotals();
-});
-
-updateEnergyUnits();
-updateDepreciationMode();
-calculateTotals();
-createCarScene();
+injectCustomizer();
+document.querySelectorAll("input,select").forEach(control=>{if(!["carBrand","carModel","carColor"].includes(control.id)){control.addEventListener("input",calculateTotals);control.addEventListener("change",calculateTotals)}});
+$("#energyType").addEventListener("change",()=>{updateEnergy();calculateTotals()});
+$("#depreciationMode").addEventListener("change",()=>{updateDepMode();calculateTotals()});
+updateEnergy();updateDepMode();calculateTotals();initCustomizer(createScene());
