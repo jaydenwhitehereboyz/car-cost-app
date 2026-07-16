@@ -1,0 +1,278 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: dark;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #090b10;
+  color: #f5f7fb;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at top, rgba(70, 90, 130, 0.18), transparent 38%),
+    #090b10;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app {
+  width: min(1380px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 38px 0 56px;
+}
+
+.summary {
+  text-align: center;
+  margin-bottom: 34px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #8792a8;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  letter-spacing: -0.04em;
+}
+
+.total {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.total span {
+  font-size: clamp(2.8rem, 8vw, 6.7rem);
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: -0.07em;
+}
+
+.total small,
+.periods small {
+  color: #8792a8;
+}
+
+.periods {
+  display: flex;
+  justify-content: center;
+  gap: 38px;
+  margin-top: 20px;
+}
+
+.periods div {
+  display: grid;
+  gap: 4px;
+}
+
+.periods span {
+  font-size: 1.05rem;
+  font-weight: 750;
+}
+
+.calculator {
+  display: grid;
+  grid-template-columns: minmax(250px, 330px) minmax(360px, 1fr) minmax(250px, 330px);
+  gap: 28px;
+  align-items: center;
+}
+
+.expense-column {
+  display: grid;
+  gap: 16px;
+}
+
+.expense-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  background: rgba(20, 24, 33, 0.82);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+  cursor: text;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.expense-card:hover,
+.expense-card:focus-within {
+  transform: translateY(-2px);
+  border-color: rgba(160, 177, 211, 0.35);
+  background: rgba(25, 30, 41, 0.96);
+}
+
+.expense-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #242b38;
+  font-size: 1.3rem;
+}
+
+.expense-info {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+}
+
+.expense-info strong {
+  font-size: 0.98rem;
+}
+
+.expense-info small {
+  color: #7f899d;
+  font-size: 0.78rem;
+}
+
+.input-wrap {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: #0f131b;
+}
+
+.input-wrap:focus-within {
+  border-color: #7188b8;
+}
+
+.input-wrap input {
+  width: 100%;
+  padding: 13px 6px 13px 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #f7f9fc;
+  font-size: 1.12rem;
+  font-weight: 750;
+}
+
+.input-wrap span {
+  color: #8a95a9;
+  font-weight: 700;
+}
+
+.car-stage {
+  position: relative;
+  min-height: 540px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 34px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    radial-gradient(circle at center, rgba(111, 135, 184, 0.14), transparent 56%),
+    #0e1219;
+  background-size: 36px 36px, 36px 36px, auto, auto;
+  box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.38), 0 22px 70px rgba(0, 0, 0, 0.25);
+}
+
+.car-glow {
+  position: absolute;
+  width: 58%;
+  height: 28%;
+  bottom: 76px;
+  border-radius: 50%;
+  background: rgba(99, 126, 183, 0.2);
+  filter: blur(42px);
+}
+
+.car {
+  position: relative;
+  z-index: 1;
+  width: 92%;
+  max-width: 680px;
+  filter: drop-shadow(0 24px 32px rgba(0, 0, 0, 0.38));
+}
+
+.car-label {
+  position: absolute;
+  bottom: 26px;
+  z-index: 2;
+  display: grid;
+  gap: 4px;
+  text-align: center;
+}
+
+.car-label span {
+  font-weight: 800;
+}
+
+.car-label small {
+  color: #7f899d;
+}
+
+.purchase-card,
+.depreciation-card {
+  border-color: rgba(116, 145, 205, 0.24);
+  background: linear-gradient(145deg, rgba(31, 39, 55, 0.96), rgba(18, 23, 32, 0.9));
+}
+
+.depreciation-card .expense-info small {
+  color: #aab9d8;
+  font-weight: 700;
+}
+
+@media (max-width: 1050px) {
+  .calculator {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .car-stage {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    min-height: 360px;
+  }
+}
+
+@media (max-width: 680px) {
+  .app {
+    width: min(100% - 20px, 1380px);
+    padding-top: 24px;
+  }
+
+  .periods {
+    gap: 24px;
+  }
+
+  .calculator {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .car-stage {
+    grid-column: auto;
+    min-height: 280px;
+    border-radius: 24px;
+  }
+
+  .car {
+    width: 110%;
+  }
+
+  .expense-column {
+    gap: 14px;
+  }
+}
