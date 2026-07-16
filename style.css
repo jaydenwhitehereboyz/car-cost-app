@@ -189,22 +189,16 @@ h1 {
   box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.38), 0 22px 70px rgba(0, 0, 0, 0.25);
 }
 
-.car-glow {
-  position: absolute;
-  width: 58%;
-  height: 28%;
-  bottom: 76px;
-  border-radius: 50%;
-  background: rgba(99, 126, 183, 0.2);
-  filter: blur(42px);
+.car3d-view {
+  width: 100%;
+  height: 100%;
+  min-height: 540px;
 }
 
-.car {
-  position: relative;
-  z-index: 1;
-  width: 92%;
-  max-width: 680px;
-  filter: drop-shadow(0 24px 32px rgba(0, 0, 0, 0.38));
+.car3d-view canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .car-label {
@@ -214,6 +208,7 @@ h1 {
   display: grid;
   gap: 4px;
   text-align: center;
+  pointer-events: none;
 }
 
 .car-label span {
@@ -245,6 +240,10 @@ h1 {
     grid-row: 1;
     min-height: 360px;
   }
+
+  .car3d-view {
+    min-height: 360px;
+  }
 }
 
 @media (max-width: 680px) {
@@ -268,8 +267,8 @@ h1 {
     border-radius: 24px;
   }
 
-  .car {
-    width: 110%;
+  .car3d-view {
+    min-height: 280px;
   }
 
   .expense-column {
