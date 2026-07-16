@@ -1,10 +1,6 @@
 import * as THREE from "https://esm.sh/three@0.166.1";
 import { OrbitControls } from "https://esm.sh/three@0.166.1/examples/jsm/controls/OrbitControls.js";
 
-const expenseInputs = document.querySelectorAll("[data-expense]");
-const purchasePriceInput = document.querySelector("#purchasePrice");
-const depreciationRateInput = document.querySelector("#depreciationRate");
-
 const monthlyTotalElement = document.querySelector("#monthlyTotal");
 const weeklyTotalElement = document.querySelector("#weeklyTotal");
 const yearlyTotalElement = document.querySelector("#yearlyTotal");
@@ -16,31 +12,105 @@ const currencyFormatter = new Intl.NumberFormat("ru-RU", {
   maximumFractionDigits: 0
 });
 
-function getPositiveNumber(input) {
-  const value = Number(input.value);
+function getPositiveNumber(inputOrId) {
+  const input = typeof inputOrId === "string"
+    ? document.querySelector(`#${inputOrId}`)
+    : inputOrId;
+
+  const value = Number(input?.value);
   return Number.isFinite(value) && value > 0 ? value : 0;
 }
 
-function calculateTotals() {
-  let monthlyTotal = 0;
+function formatMonthly(value) {
+  return `${currencyFormatter.format(value)}/мес`;
+}
 
-  expenseInputs.forEach((input) => {
-    monthlyTotal += getPositiveNumber(input);
+function convertToMonthly(input) {
+  const value = getPositiveNumber(input);
+  return input.dataset.period === "year" ? value / 12 : value;
+}
+
+function calculateDirectCategory(category) {
+  const inputs = document.querySelectorAll(`[data-expense][data-category="${category}"]`);
+  return Array.from(inputs).reduce((total, input) => total + convertToMonthly(input), 0);
+}
+
+function calculatePurchaseMonthly() {
+  const initialCosts = getPositiveNumber("initialCosts");
+  const years = getPositiveNumber("initialCostsYears");
+
+  return years > 0 ? initialCosts / (years * 12) : 0;
+}
+
+function calculateFuelMonthly() {
+  const monthlyMileage = getPositiveNumber("monthlyMileage");
+  const consumption = getPositiveNumber("energyConsumption");
+  const energyPrice = getPositiveNumber("energyPrice");
+  const extras = getPositiveNumber("fuelExtras");
+
+  return monthlyMileage * consumption / 100 * energyPrice + extras;
+}
+
+function calculateDepreciationMonthly() {
+  const purchasePrice = getPositiveNumber("purchasePrice");
+  const mode = document.querySelector("#depreciationMode").value;
+
+  if (mode === "resale") {
+    const resalePrice = getPositiveNumber("resalePrice");
+    const years = getPositiveNumber("resaleYears");
+    const totalLoss = Math.max(purchasePrice - resalePrice, 0);
+
+    return years > 0 ? totalLoss / (years * 12) : 0;
+  }
+
+  const rate = getPositiveNumber("depreciationRate");
+  return purchasePrice * (rate / 100) / 12;
+}
+
+function updateCategoryTotal(category, value) {
+  const element = document.querySelector(`[data-category-total="${category}"]`);
+
+  if (element) {
+    element.textContent = formatMonthly(value);
+  }
+}
+
+function calculateTotals() {
+  const categoryTotals = {
+    purchase: calculatePurchaseMonthly(),
+    fuel: calculateFuelMonthly(),
+    insurance: calculateDirectCategory("insurance"),
+    maintenance: calculateDirectCategory("maintenance"),
+    depreciation: calculateDepreciationMonthly(),
+    parking: calculateDirectCategory("parking"),
+    taxes: calculateDirectCategory("taxes"),
+    other: calculateDirectCategory("other")
+  };
+
+  Object.entries(categoryTotals).forEach(([category, value]) => {
+    updateCategoryTotal(category, value);
   });
 
-  const purchasePrice = getPositiveNumber(purchasePriceInput);
-  const depreciationRate = getPositiveNumber(depreciationRateInput);
-  const monthlyDepreciation = purchasePrice * (depreciationRate / 100) / 12;
-
-  monthlyTotal += monthlyDepreciation;
-
+  const monthlyTotal = Object.values(categoryTotals).reduce((total, value) => total + value, 0);
   const weeklyTotal = monthlyTotal * 12 / 52;
   const yearlyTotal = monthlyTotal * 12;
 
-  monthlyDepreciationElement.textContent = `${currencyFormatter.format(monthlyDepreciation)} в месяц`;
+  monthlyDepreciationElement.textContent = currencyFormatter.format(categoryTotals.depreciation);
   monthlyTotalElement.textContent = currencyFormatter.format(monthlyTotal);
   weeklyTotalElement.textContent = currencyFormatter.format(weeklyTotal);
   yearlyTotalElement.textContent = currencyFormatter.format(yearlyTotal);
+}
+
+function updateEnergyUnits() {
+  const isElectric = document.querySelector("#energyType").value === "electric";
+  document.querySelector("#consumptionUnit").textContent = isElectric ? "кВт⋅ч/100 км" : "л/100 км";
+  document.querySelector("#energyPriceUnit").textContent = isElectric ? "₽/кВт⋅ч" : "₽/л";
+}
+
+function updateDepreciationMode() {
+  const isResaleMode = document.querySelector("#depreciationMode").value === "resale";
+  document.querySelector("#depreciationPercentFields").hidden = isResaleMode;
+  document.querySelector("#depreciationResaleFields").hidden = !isResaleMode;
 }
 
 function createCarScene() {
@@ -294,11 +364,24 @@ function createCarScene() {
   });
 }
 
-const calculatorInputs = document.querySelectorAll("input");
+const calculatorControls = document.querySelectorAll("input, select");
 
-calculatorInputs.forEach((input) => {
-  input.addEventListener("input", calculateTotals);
+calculatorControls.forEach((control) => {
+  control.addEventListener("input", calculateTotals);
+  control.addEventListener("change", calculateTotals);
 });
 
+document.querySelector("#energyType").addEventListener("change", () => {
+  updateEnergyUnits();
+  calculateTotals();
+});
+
+document.querySelector("#depreciationMode").addEventListener("change", () => {
+  updateDepreciationMode();
+  calculateTotals();
+});
+
+updateEnergyUnits();
+updateDepreciationMode();
 calculateTotals();
 createCarScene();
